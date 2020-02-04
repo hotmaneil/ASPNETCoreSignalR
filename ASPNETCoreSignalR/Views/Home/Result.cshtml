@@ -1,0 +1,85 @@
+﻿
+@{
+    ViewData["Title"] = "Result";
+}
+
+<h1>Result</h1>
+
+<script src="~/lib/jquery/dist/jquery.js"></script>
+<script src="~/lib/signalr/signalr.js"></script>
+<script src="~/js/highcharts.js"></script>
+
+<script>
+    $(function () {
+
+        var pollID = 1;
+        LoadResults(pollID);
+
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl("/pollHub")
+            .build();
+
+        connection.on('GetVoteResults', function () {
+            LoadResults(1);
+        });
+
+        connection.start()
+        .then(function () {
+            console.log('connection started');
+        })
+        .catch(error => {
+            console.error(error.message);
+        });
+    });
+
+    /**
+     * 載入圖表結果
+     *  pollID
+     */
+    function LoadResults(pollID) {
+
+        $.ajax({
+            url: '../api/Poll/GetVoteResults',
+            type: 'GET',
+            datatype: 'json',
+            data: { id: pollID },
+            success: function (data) {
+                if (data.length > 0) {
+                    var choices = [];
+                    var votes = [];
+
+                    for (var i = 0; i < data.length; i++) {
+                        choices.push(data[i].choice);
+                        votes.push(data[i].vote);
+
+                    }
+
+                    Highcharts.chart('container', {
+                        chart: {
+                            type: 'bar'
+                        },
+                        title: {
+                            text: 'Poll Vote Results'
+                        },
+                        xAxis: {
+                            categories: choices
+                        },
+                        yAxis: {
+                            title: {
+                                text: 'Best DOTA Heroes'
+                            }
+                        },
+                        series: [{
+                            name: 'Votes',
+                            data: votes
+                        }]
+                    });
+                }
+            }
+        });
+    }
+</script>
+
+<div id="container" style="min-width: 310px; max-width: 600px; height: 400px; margin: 0 auto">
+
+</div>
